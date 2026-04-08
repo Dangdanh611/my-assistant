@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Floating Assistant — Admin Panel</title>
+  <style>
+    /* ============================================================
+       FONTS & RESET
+    ============================================================ */
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0c0c14;
+      --bg2: #12121f;
+      --surface: #1a1a2e;
+      --surface2: #222240;
+      --border: rgba(255,255,255,0.07);
+      --border-active: rgba(108,99,255,0.5);
+      --text: #e4e4f0;
+      --text-dim: #6b6b8a;
+      --accent: #6C63FF;
+      --accent2: #a78bfa;
+      --green: #34d399;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --radius: 14px;
+      --font: 'DM Sans', system-ui, sans-serif;
+      --mono: 'DM Mono', monospace;
+    }
+
+    html { height: 100%; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ============================================================
+       LAYOUT
+    ============================================================ */
+    .layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      grid-template-rows: 64px 1fr;
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    .header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      padding: 0 32px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .header-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .header-sub {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .header-spacer { flex: 1; }
+    .header-badge {
+      padding: 5px 12px;
+      background: rgba(52,211,153,0.1);
+      border: 1px solid rgba(52,211,153,0.2);
+      border-radius: 20px;
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .sidebar-label {
+      color: var(--text-dim);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      padding: 8px 12px 4px;
+    }
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.15s;
+      border: 1px solid transparent;
+    }
+    .sidebar-item:hover { background: var(--surface); color: var(--text); }
+    .sidebar-item.active {
+      background: rgba(108,99,255,0.15);
+      color: var(--accent2);
+      border-color: rgba(108,99,255,0.2);
+    }
+    .sidebar-item .s-icon { font-size: 16px; }
+
+    /* MAIN CONTENT */
+    .main {
+      padding: 32px;
+      overflow-y: auto;
+      max-height: calc(100vh - 64px);
+      display: flex;
+      gap: 24px;
+    }
+
+    /* PANELS */
+    .panel-left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-width: 0;
+    }
+    .panel-right {
+      width: 340px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* CARD */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .card:focus-within { border-color: var(--border-active); }
+    .card-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(108,99,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+    }
+    .card-desc {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .card-body { padding: 20px; }
+
+    /* FORM FIELDS */
+    .form-group { margin-bottom: 16px; }
+    .form-group:last-child { margin-bottom: 0; }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+    }
+    input[type="text"],
+    input[type="url"],
+    input[type="color"],
+    select {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input[type="text"]:focus,
+    input[type="url"]:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+    }
+    input[type="color"] {
+      height: 42px;
+      padding: 4px;
+      cursor: pointer;
+    }
+
+    /* TOGGLES */
+    .toggle-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .toggle-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      gap: 8px;
+    }
+    .toggle-item:hover { border-color: var(--border-active); background: rgba(108,99,255,0.05); }
+    .toggle-item.on { border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.05); }
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .toggle-label .t-icon { font-size: 16px; }
+
+    /* SWITCH */
+    .switch {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch-slider {
+      position: absolute;
+      inset: 0;
+      background: var(--surface2);
+      border-radius: 20px;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .switch-slider::before {
+      content: "";
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .switch input:checked + .switch-slider { background: var(--green); }
+    .switch input:checked + .switch-slider::before { transform: translateX(16px); }
+
+    /* DOMAIN CONFIG */
+    .domain-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+    .domain-row input { flex: 1; }
+    .domain-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(108,99,255,0.15);
+      border: 1px solid rgba(108,99,255,0.2);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--accent2);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .domain-tag:hover { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.2); color: var(--red); }
+    .domain-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+
+    /* BUTTONS */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 20px;
+      border-radius: 10px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: none;
+      letter-spacing: -0.2px;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 4px 16px rgba(108,99,255,0.3);
+    }
+    .btn-primary:hover { background: #5a53e0; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,99,255,0.4); }
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent2); }
+    .btn-success {
+      background: rgba(52,211,153,0.15);
+      border: 1px solid rgba(52,211,153,0.3);
+      color: var(--green);
+    }
+    .btn-success:hover { background: rgba(52,211,153,0.25); }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* JSON PREVIEW */
+    #json-preview {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      color: #a78bfa;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 320px;
+      overflow-y: auto;
+      line-height: 1.7;
+    }
+
+    /* TOAST */
+    #toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      padding: 12px 20px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+
+    /* COLOR PREVIEW */
+    .color-row { display: flex; align-items: center; gap: 12px; }
+    .color-swatch {
+      flex: 1;
+      height: 42px;
+      border-radius: 10px;
+      transition: background 0.2s;
+    }
+
+    /* EMBED CODE */
+    .code-block {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      color: #86efac;
+      overflow-x: auto;
+      white-space: pre;
+      line-height: 1.6;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .main { flex-direction: column; padding: 16px; }
+      .panel-right { width: 100%; }
+    }
+    @media (max-width: 600px) {
+      .toggle-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ANIMATIONS */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .card { animation: fadeIn 0.4s ease both; }
+    .card:nth-child(2) { animation-delay: 0.05s; }
+    .card:nth-child(3) { animation-delay: 0.1s; }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-logo">🤖</div>
+    <div>
+      <div class="header-title">Floating Assistant</div>
+      <div class="header-sub">Admin Panel — Quản lý cấu hình</div>
+    </div>
+    <div class="header-spacer"></div>
+    <div class="header-badge">✓ No Backend Required</div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-label">Menu</div>
+    <div class="sidebar-item active">
+      <span class="s-icon">⚙️</span> Cấu hình
+    </div>
+    <div class="sidebar-item" onclick="showEmbedGuide()">
+      <span class="s-icon">📎</span> Cách nhúng
+    </div>
+    <div class="sidebar-label" style="margin-top:12px;">Tính năng</div>
+    <div class="sidebar-item">
+      <span class="s-icon">🔊</span> Text to Speech
+    </div>
+    <div class="sidebar-item">
+      <span class="s-icon">📌</span> Highlight
+    </div>
+    <div class="sidebar-item">
+      <span class="s-icon">🧘</span> Reading Mode
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- LEFT PANEL -->
+    <div class="panel-left">
+
+      <!-- BASIC SETTINGS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">🔗</div>
+          <div>
+            <div class="card-title">Cấu hình cơ bản</div>
+            <div class="card-desc">Link chuyển hướng và màu sắc</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Link chuyển hướng (tuỳ chỉnh)</label>
+            <input type="url" id="cfg-link" placeholder="https://example.com" oninput="updatePreview()">
+          </div>
+          <div class="form-group">
+            <label>Tên nút link</label>
+            <input type="text" id="cfg-link-label" placeholder="Liên kết" value="Liên kết" oninput="updatePreview()">
+          </div>
+          <div class="form-group">
+            <label>Màu chủ đạo (Accent color)</label>
+            <div class="color-row">
+              <input type="color" id="cfg-accent" value="#6C63FF" oninput="updateAccent()">
+              <div class="color-swatch" id="color-swatch" style="background:#6C63FF;"></div>
+              <input type="text" id="cfg-accent-hex" value="#6C63FF" style="width:110px;"
+                oninput="document.getElementById('cfg-accent').value=this.value;updateAccent()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOGGLE FEATURES -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">🎛️</div>
+          <div>
+            <div class="card-title">Bật / Tắt tính năng</div>
+            <div class="card-desc">Chọn các tính năng muốn hiển thị</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="toggle-grid">
+            <div class="toggle-item on" id="ti-tts" onclick="toggleFeature('enableTTS','ti-tts')">
+              <div class="toggle-label"><span class="t-icon">🔊</span> Text to Speech</div>
+              <label class="switch"><input type="checkbox" id="ft-tts" checked onchange="updatePreview()"><span class="switch-slider"></span></label>
+            </div>
+            <div class="toggle-item on" id="ti-hl" onclick="toggleFeature('enableHighlight','ti-hl')">
+              <div class="toggle-label"><span class="t-icon">📌</span> Highlight</div>
+              <label class="switch"><input type="checkbox" id="ft-highlight" checked onchange="updatePreview()"><span class="switch-slider"></span></label>
+            </div>
+            <div class="toggle-item on" id="ti-rm" onclick="toggleFeature('enableReadingMode','ti-rm')">
+              <div class="toggle-label"><span class="t-icon">🧘</span> Reading Mode</div>
+              <label class="switch"><input type="checkbox" id="ft-readingMode" checked onchange="updatePreview()"><span class="switch-slider"></span></label>
+            </div>
+            <div class="toggle-item on" id="ti-sc" onclick="toggleFeature('enableScroll','ti-sc')">
+              <div class="toggle-label"><span class="t-icon">🔝</span> Scroll</div>
+              <label class="switch"><input type="checkbox" id="ft-scroll" checked onchange="updatePreview()"><span class="switch-slider"></span></label>
+            </div>
+            <div class="toggle-item on" id="ti-sp" onclick="toggleFeature('enableSavePosition','ti-sp')">
+              <div class="toggle-label"><span class="t-icon">💾</span> Lưu vị trí</div>
+              <label class="switch"><input type="checkbox" id="ft-savePos" checked onchange="updatePreview()"><span class="switch-slider"></span></label>
+            </div>
+            <div class="toggle-item on" id="ti-fn" onclick="toggleFeature('enableFind','ti-fn')">
+              <div class="toggle-label"><span class="t-icon">🔎</span> Tìm kiếm</div>
+              <label class="switch"><input type="checkbox" id="ft-find" checked onchange="updatePreview()"><span class="switch-slider"></span></label>
+            </div>
+            <div class="toggle-item on" id="ti-fc" onclick="toggleFeature('enableFontCustomize','ti-fc')">
+              <div class="toggle-label"><span class="t-icon">🔤</span> Tuỳ chỉnh chữ</div>
+              <label class="switch"><input type="checkbox" id="ft-font" checked onchange="updatePreview()"><span class="switch-slider"></span></label>
+            </div>
+            <div class="toggle-item on" id="ti-rt" onclick="toggleFeature('enableReadingTime','ti-rt')">
+              <div class="toggle-label"><span class="t-icon">⏱️</span> Thời gian đọc</div>
+              <label class="switch"><input type="checkbox" id="ft-readTime" checked onchange="updatePreview()"><span class="switch-slider"></span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MULTI-DOMAIN -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">🌐</div>
+          <div>
+            <div class="card-title">Cấu hình theo domain (Bonus)</div>
+            <div class="card-desc">Config riêng biệt cho từng website</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Thêm domain</label>
+            <div class="domain-row">
+              <input type="text" id="new-domain" placeholder="example.com">
+              <button class="btn btn-secondary" onclick="addDomain()">+ Thêm</button>
+            </div>
+            <div class="domain-tags" id="domain-tags"></div>
+          </div>
+          <p style="font-size:12px;color:var(--text-dim);">
+            Mỗi domain sẽ dùng cấu hình hiện tại. Bạn có thể tạo nhiều config và ghép lại vào một file JSON.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="panel-right">
+
+      <!-- JSON PREVIEW -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">📄</div>
+          <div>
+            <div class="card-title">Preview JSON</div>
+            <div class="card-desc">Cập nhật realtime</div>
+          </div>
+        </div>
+        <div class="card-body" style="padding:16px;">
+          <pre id="json-preview">{}</pre>
+          <div class="btn-row" style="margin-top:12px;">
+            <button class="btn btn-primary" onclick="downloadConfig()">⬇️ Download config.json</button>
+            <button class="btn btn-secondary" onclick="copyConfig()">📋 Copy JSON</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- EMBED GUIDE -->
+      <div class="card" id="embed-guide-card">
+        <div class="card-header">
+          <div class="card-icon">📎</div>
+          <div>
+            <div class="card-title">Cách nhúng vào website</div>
+            <div class="card-desc">Chỉ cần 1 dòng script</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">
+            Thêm đoạn code sau vào cuối thẻ <code style="color:var(--accent2);">&lt;body&gt;</code> của website:
+          </p>
+          <div class="code-block" id="embed-code">&lt;!-- Floating Web Assistant --&gt;
+&lt;script
+  src="https://yourdomain.github.io/floating-assistant.js"
+  data-config="https://yourdomain.github.io/config.json"
+&gt;&lt;/script&gt;</div>
+          <button class="btn btn-success" style="margin-top:12px;width:100%;" onclick="copyEmbed()">
+            📋 Copy embed code
+          </button>
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+            <div style="font-size:12px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Deploy lên GitHub Pages</div>
+            <ol style="font-size:12px;color:var(--text-dim);padding-left:16px;line-height:2;">
+              <li>Upload <code style="color:var(--accent2);">floating-assistant.js</code> lên repo</li>
+              <li>Upload <code style="color:var(--accent2);">config.json</code> lên repo</li>
+              <li>Bật GitHub Pages trong Settings</li>
+              <li>Nhúng script vào website của bạn</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- TOAST -->
+<div id="toast">✅ <span id="toast-msg">Đã copy!</span></div>
+
+<script>
+// ============================================================
+//  STATE
+// ============================================================
+const domains = [];
+
+// ============================================================
+//  TOGGLE FEATURE
+// ============================================================
+function toggleFeature(key, itemId) {
+  const checkbox = document.querySelector(`#${itemId} input[type=checkbox]`);
+  const item = document.getElementById(itemId);
+  // Chỉ toggle khi click vào item (không phải checkbox trực tiếp)
+  // checkbox đã có onclick riêng, item click sẽ dùng để toggle visual
+  updatePreview();
+  item.classList.toggle('on', checkbox.checked);
+}
+
+// Sync class on/off khi checkbox thay đổi
+document.querySelectorAll('.toggle-item input[type=checkbox]').forEach(cb => {
+  cb.addEventListener('change', function() {
+    const item = this.closest('.toggle-item');
+    item.classList.toggle('on', this.checked);
+    updatePreview();
+  });
+  // Prevent double-fire
+  cb.addEventListener('click', e => e.stopPropagation());
+});
+
+// ============================================================
+//  ACCENT COLOR
+// ============================================================
+function updateAccent() {
+  const val = document.getElementById('cfg-accent').value;
+  document.getElementById('cfg-accent-hex').value = val;
+  document.getElementById('color-swatch').style.background = val;
+  updatePreview();
+}
+
+// ============================================================
+//  BUILD CONFIG OBJECT
+// ============================================================
+function buildConfig() {
+  const config = {
+    enableTTS: document.getElementById('ft-tts').checked,
+    enableHighlight: document.getElementById('ft-highlight').checked,
+    enableReadingMode: document.getElementById('ft-readingMode').checked,
+    enableScroll: document.getElementById('ft-scroll').checked,
+    enableSavePosition: document.getElementById('ft-savePos').checked,
+    enableFind: document.getElementById('ft-find').checked,
+    enableFontCustomize: document.getElementById('ft-font').checked,
+    enableReadingTime: document.getElementById('ft-readTime').checked,
+    accentColor: document.getElementById('cfg-accent').value,
+  };
+
+  const link = document.getElementById('cfg-link').value.trim();
+  if (link) config.link = link;
+  config.linkLabel = document.getElementById('cfg-link-label').value.trim() || 'Liên kết';
+
+  // Multi-domain
+  if (domains.length > 0) {
+    domains.forEach(d => {
+      config[d] = { ...config };
+      delete config[d]._domains;
+    });
+  }
+
+  return config;
+}
+
+// ============================================================
+//  PREVIEW
+// ============================================================
+function updatePreview() {
+  const config = buildConfig();
+  const json = JSON.stringify(config, null, 2);
+
+  // Syntax highlighting đơn giản
+  const highlighted = json
+    .replace(/"([^"]+)":/g, '<span style="color:#93c5fd">"$1"</span>:')
+    .replace(/: "(.*?)"/g, ': <span style="color:#86efac">"$1"</span>')
+    .replace(/: (true|false)/g, ': <span style="color:#fbbf24">$1</span>')
+    .replace(/: (\d+)/g, ': <span style="color:#f9a8d4">$1</span>');
+
+  document.getElementById('json-preview').innerHTML = highlighted;
+}
+
+// ============================================================
+//  DOWNLOAD
+// ============================================================
+function downloadConfig() {
+  const config = buildConfig();
+  const json = JSON.stringify(config, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'config.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ Đã download config.json!');
+}
+
+// ============================================================
+//  COPY
+// ============================================================
+function copyConfig() {
+  const config = buildConfig();
+  const json = JSON.stringify(config, null, 2);
+  navigator.clipboard.writeText(json).then(() => showToast('✅ Đã copy JSON!'));
+}
+
+function copyEmbed() {
+  const code = document.getElementById('embed-code').textContent;
+  navigator.clipboard.writeText(code).then(() => showToast('✅ Đã copy embed code!'));
+}
+
+// ============================================================
+//  DOMAIN
+// ============================================================
+function addDomain() {
+  const inp = document.getElementById('new-domain');
+  const domain = inp.value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*/, '');
+  if (!domain) return;
+  if (domains.includes(domain)) { showToast('⚠️ Domain đã tồn tại!'); return; }
+  domains.push(domain);
+  inp.value = '';
+  renderDomains();
+  updatePreview();
+}
+
+function removeDomain(domain) {
+  const idx = domains.indexOf(domain);
+  if (idx > -1) domains.splice(idx, 1);
+  renderDomains();
+  updatePreview();
+}
+
+function renderDomains() {
+  const container = document.getElementById('domain-tags');
+  container.innerHTML = domains.map(d => `
+    <div class="domain-tag" onclick="removeDomain('${d}')" title="Click để xoá">
+      🌐 ${d} ✕
+    </div>
+  `).join('');
+}
+
+// ============================================================
+//  EMBED GUIDE
+// ============================================================
+function showEmbedGuide() {
+  document.getElementById('embed-guide-card').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ============================================================
+//  TOAST
+// ============================================================
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  const msgEl = document.getElementById('toast-msg');
+  msgEl.textContent = msg.replace(/^[✅⚠️]+ ?/, '');
+  toast.querySelector('span').previousSibling && (toast.childNodes[0].textContent = msg.match(/^[✅⚠️]+/)?.[0] || '✅');
+  toast.innerHTML = `${msg}`;
+  toast.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+updatePreview();
+
+// Prevent enter key submit on inputs
+document.querySelectorAll('input').forEach(inp => {
+  inp.addEventListener('keydown', e => { if(e.key === 'Enter') { e.preventDefault(); updatePreview(); } });
+});
+
+// Update accent color swatch on load
+updateAccent();
+</script>
+</body>
+</html>

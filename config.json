@@ -1,0 +1,30 @@
+{
+  "enableTTS": true,
+  "enableHighlight": true,
+  "enableReadingMode": true,
+  "enableScroll": true,
+  "enableReadingProgress": true,
+  "enableReadingTime": true,
+  "enableFind": true,
+  "enableFontCustomize": true,
+  "enableSavePosition": true,
+  "link": "https://example.com",
+  "linkLabel": "Trang chủ",
+  "accentColor": "#6C63FF",
+  "_comment": "Bạn có thể thêm config riêng theo domain bên dưới",
+  "myblog.github.io": {
+    "enableTTS": true,
+    "enableHighlight": true,
+    "link": "https://myblog.github.io",
+    "linkLabel": "Về trang chủ",
+    "accentColor": "#e91e8c"
+  },
+  "example.com": {
+    "enableTTS": false,
+    "enableHighlight": true,
+    "enableReadingMode": true,
+    "link": "https://example.com/contact",
+    "linkLabel": "Liên hệ",
+    "accentColor": "#00b894"
+  }
+}
